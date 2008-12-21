@@ -39,7 +39,13 @@ JsDomSerializer.attrs = [
   'value',
   'disabled',
   'lang',
-  'src'
+  'src',
+  'name',
+  'xmlns',
+  'xml:lang',
+  'content',
+  'http-equiv',
+  'href'
 ];
 
 /**
@@ -80,20 +86,14 @@ JsDomSerializer.prototype = {
   /**
    * Creates a start tag string
    */ 
-  startTag : function(node, name) {
-    return '<' + name + this.serializeAttributes(node) + (this.isEmpty(node) ? JsDomSerializer.selfClosedEnd : '>');
+  startTag : function(node, name, autoclosed) {
+    return '<' + name + this.serializeAttributes(node) + (autoclosed && !JsDomSerializer.useEndTag[name] ? JsDomSerializer.selfClosedEnd : '>');
   },
   /**
    * Creates an end tag string
    */  
-  endTag : function(node, name) {
-    return this.isEmpty(node) ? '' : '</' + name + '>';
-  },
-  /**
-   * Checks if a node element is empty
-   */ 
-  isEmpty : function(node) {
-    return !node.childNodes.length && !JsDomSerializer.useEndTag[node.tagName.toLowerCase()];
+  endTag : function(node, name, hasContent) {
+    return (hasContent || JsDomSerializer.useEndTag[name]) ? '</' + name + '>' : '';
   },
   /**
    * Iterates over childNodes returning its serialization
@@ -113,9 +113,11 @@ JsDomSerializer.prototype = {
     var temp = node.tagName.toLowerCase();
     var name = (temp in this.translations) ? this.translations[temp] : temp;
     var s = '';
-    if (name) s += this.startTag(node, name);
-    s += this.content(node);
-    if (name) s += this.endTag(node, name); 
+    if (name === false) return '';
+    var content = this.content(node);
+    if (name) s += this.startTag(node, name, !content);
+    s += content;
+    if (name) s += this.endTag(node, name, !!content); 
     return s;
   },
   serializeAttributes: function(node) {
@@ -163,6 +165,15 @@ JsDomSerializer.prototype = {
       }
     }
     return true;
+  },
+  /**
+   * Sets an element name translation, use an empty string as translation
+   * if you want to serialize the element contents without including
+   * element tags.
+   */ 
+  translation: function(original, translation) {
+    this.translations[original] = translation;
+    return this;
   },
   /**
    * Adds a filter to allow/disallow elements and attributes

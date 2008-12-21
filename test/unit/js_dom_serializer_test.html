@@ -178,7 +178,7 @@ module({
       var b = document.createElement('b');
       b.appendChild(document.createTextNode('hey'));
       this.el.appendChild(b);
-      this.s.translations['b'] = 'strong';
+      this.s.translation('b', 'strong');
     }
     },
     should("be reflected on serialization", function() {
@@ -191,11 +191,24 @@ module({
       var b = document.createElement('b');
       b.appendChild(document.createTextNode('hey'));
       this.el.appendChild(b);
-      this.s.translations['b'] = '';
+      this.s.translation('b', '');
     }
     },
     should("serialize content but not the element and its attributes", function() {
       this.assertEqual('<p>hey</p>', this.s.serialize(this.el));      
+    })
+  ),
+  context("Translations to `false`", {
+    setup: function() {
+      this.el = document.createElement('p');
+      var b = document.createElement('b');
+      b.appendChild(document.createTextNode('hey'));
+      this.el.appendChild(b);
+      this.s.translation('b', false);
+    }
+    },
+    should("results in skipping node serializations", function() {
+      this.assertEqual('<p />', this.s.serialize(this.el));      
     })
   )
 )();
