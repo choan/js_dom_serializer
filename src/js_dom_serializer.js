@@ -1,5 +1,6 @@
 var JsDomSerializer = function () {
   this.filters = [];
+  this.translations = {};
 };
 
 /**
@@ -37,7 +38,8 @@ JsDomSerializer.attrs = [
   'type',
   'value',
   'disabled',
-  'lang'
+  'lang',
+  'src'
 ];
 
 /**
@@ -76,14 +78,14 @@ JsDomSerializer.prototype = {
   /**
    * Creates a start tag string
    */ 
-  startTag : function(node) {
-    return '<' + node.tagName.toLowerCase() + this.serializeAttributes(node) + (this.isEmpty(node) ? JsDomSerializer.selfClosedEnd : '>');
+  startTag : function(node, name) {
+    return '<' + name + this.serializeAttributes(node) + (this.isEmpty(node) ? JsDomSerializer.selfClosedEnd : '>');
   },
   /**
    * Creates an end tag string
    */  
-  endTag : function(node) {
-    return this.isEmpty(node) ? '' : '</' + node.tagName.toLowerCase() + '>';
+  endTag : function(node, name) {
+    return this.isEmpty(node) ? '' : '</' + name + '>';
   },
   /**
    * Checks if a node element is empty
@@ -105,7 +107,14 @@ JsDomSerializer.prototype = {
     return this.content(doc);
   },
   serializeElement: function(node) {
-    return this.startTag(node) + this.content(node) + this.endTag(node);
+    // translate name
+    var temp = node.tagName.toLowerCase();
+    var name = (temp in this.translations) ? this.translations[temp] : temp;
+    var s = '';
+    if (name) s += this.startTag(node, name);
+    s += this.content(node);
+    if (name) s += this.endTag(node, name); 
+    return s;
   },
   serializeAttributes: function(node) {
     var pairs = [], attributes = JsDomSerializer.attrs, attr, i;

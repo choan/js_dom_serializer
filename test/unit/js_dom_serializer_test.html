@@ -171,6 +171,32 @@ module({
     should_not("be serialized", function() {
       this.assertEqual('<p id="down" />', this.s.serialize(this.el));
     })
+  ),
+  context("Tag translations", {
+    setup: function() {
+      this.el = document.createElement('p');
+      var b = document.createElement('b');
+      b.appendChild(document.createTextNode('hey'));
+      this.el.appendChild(b);
+      this.s.translations['b'] = 'strong';
+    }
+    },
+    should("be reflected on serialization", function() {
+      this.assertEqual('<p><strong>hey</strong></p>', this.s.serialize(this.el));
+    })
+  ),
+  context("Translations to empty strings", {
+    setup: function() {
+      this.el = document.createElement('p');
+      var b = document.createElement('b');
+      b.appendChild(document.createTextNode('hey'));
+      this.el.appendChild(b);
+      this.s.translations['b'] = '';
+    }
+    },
+    should("serialize content but not the element and its attributes", function() {
+      this.assertEqual('<p>hey</p>', this.s.serialize(this.el));      
+    })
   )
 )();
 // ]]>
