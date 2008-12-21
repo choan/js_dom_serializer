@@ -1,0 +1,64 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+
+  <title>Export myself</title>
+  <script src="../src/js_dom_serializer.js?1" type="text/javascript"></script>
+  <script type="text/javascript" charset="utf-8">
+    window.onload = function() {
+      addButton();
+      serialize();
+    };
+    
+    function addButton() {
+      var b = document.createElement('input');
+      b.type = 'button';
+      b.value = 'serialize';
+      document.body.appendChild(b);
+      b.onclick = serialize;
+    }
+    
+    function serialize() {
+      var serializer = new JsDomSerializer();
+      serializer
+        .addFilter(function(node) {
+          if (node.nodeType == 1) {
+            if (node.type == 'button') return false;
+            if (node.tagName.toLowerCase() == 'textarea') return false;
+          }
+        });
+      serializer.translation('b', 'strong');  
+      var s = serializer.serialize(document);
+      var ta;
+      ta = document.getElementById('output');
+      if (!ta) {
+        var ta = document.createElement('textarea');
+        document.body.appendChild(ta);
+        ta.id = 'output';
+        ta.rows = 20;
+        ta.cols = 80;
+      }
+      ta.value = s;
+    }
+
+  </script>
+  
+</head>
+
+<body>
+
+<h1>Export myself</h1>
+
+<p>Lorem <strong>ipsum</strong> dolor <em>sit amet</em>, <a href="http://example.com">consectetur</a> adipisicing elit, sed do <a href="#local">eiusmod</a> tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+
+
+<form id="test-form">
+  <label for="yay">Yay</label> <input type="text" name="yay" value="órdago" id="yay" />
+</form>
+
+
+</body>
+</html>
