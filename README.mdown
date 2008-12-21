@@ -1,2 +1,54 @@
 # Js Dom Serializer
 
+Serialize live DOM to (X)HTML string.
+
+## Usage
+
+Create a serializer object, then use its `serialize` or its `content` method passing a DOM node as argument.
+
+    new JsDomSerializer().serialize(document.getElementById('some-element'));
+
+### Filters
+
+You can disallow the serialization of any node through a filtering function. The function is called with the node as its only argument, except for attribute nodes where it receives the node containing the attribute and the attribute name. If the function returns `false`, node is skipped.
+
+    var serializer = new JsDomSerializer();
+    // disallow serialization of /script elements
+    serializer.addFilter(function(node) {
+      if (node.nodeType == 1 && node.tagName.toLowerCase() == 'script') {
+        return false;
+      }
+    });
+    // disallow serialization of @name attributes for /form elements
+    serializer.addFilter(function(node, attrName) {
+      if (attrName == 'name' && node.tagName.toLowerCase() == 'form') {
+        return false;
+      }
+    });
+
+### Translation of node names
+
+Each instance of a serializer uses a `translations` dictionary to translate element names.
+
+    var serializer = new JsDomSerializer();
+    // translate /b elements as /strong
+    serializer.translations.b = 'strong';
+    // do not output tags for /div elements
+    // but process its content
+    serializer.translations.div = '';
+
+### Exportable attributes
+
+Only attributes in the `JsDomSerializer.attrs` array are exported (this is due to a defect in Internet Explorer and its handling of `nodeElement.attributes` collections). Extend or modify as needed.
+
+## Dependencies
+
+None.
+
+## Author
+
+Choan Gálvez <http://choangalvez.nom.es/>
+
+## License
+
+BSD like, see License.txt
