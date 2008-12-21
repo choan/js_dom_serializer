@@ -210,6 +210,26 @@ module({
     should("results in skipping node serializations", function() {
       this.assertEqual('<p />', this.s.serialize(this.el));      
     })
+  ),
+  context("Attribute lists", {
+    setup: function() {
+      this.el = document.createElement('p');
+      this.el.className = 'hey';
+      this.el.id = 'hey';
+      var b = document.createElement('b');
+      b.className = 'ho';
+      b.id = 'ho';
+      b.appendChild(document.createTextNode('yay!'));
+      this.el.appendChild(b);
+      this.s
+        .translation('b', 'strong')
+        .allowedAttrs('p', ['class'])
+        .allowedAttrs('strong', ['id']);
+    }
+    },
+    should("are taken from element type configuration", function() {
+      this.assertEqual('<p class="hey"><strong id="ho">yay!</strong></p>', this.s.serialize(this.el));
+    })
   )
 )();
 // ]]>

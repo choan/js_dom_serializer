@@ -1,6 +1,7 @@
 var JsDomSerializer = function () {
   this.filters = [];
   this.translations = {};
+  this.attrs = { '*' : [].concat(JsDomSerializer.attrs['*']) };
 };
 
 /**
@@ -31,22 +32,24 @@ JsDomSerializer.useEndTag = {
 /**
  * Exportable attrs
  */  
-JsDomSerializer.attrs = [
-  'class',
-  'for',
-  'id',
-  'type',
-  'value',
-  'disabled',
-  'lang',
-  'src',
-  'name',
-  'xmlns',
-  'xml:lang',
-  'content',
-  'http-equiv',
-  'href'
-];
+JsDomSerializer.attrs = {
+  '*' : [
+    'class',
+    'for',
+    'id',
+    'type',
+    'value',
+    'disabled',
+    'lang',
+    'src',
+    'name',
+    'xmlns',
+    'xml:lang',
+    'content',
+    'http-equiv',
+    'href'
+  ]
+};
 
 /**
  * Escapes XML special chars
@@ -87,7 +90,7 @@ JsDomSerializer.prototype = {
    * Creates a start tag string
    */ 
   startTag : function(node, name, autoclosed) {
-    return '<' + name + this.serializeAttributes(node) + (autoclosed && !JsDomSerializer.useEndTag[name] ? JsDomSerializer.selfClosedEnd : '>');
+    return '<' + name + this.serializeAttributes(node, name) + (autoclosed && !JsDomSerializer.useEndTag[name] ? JsDomSerializer.selfClosedEnd : '>');
   },
   /**
    * Creates an end tag string
@@ -120,8 +123,8 @@ JsDomSerializer.prototype = {
     if (name) s += this.endTag(node, name, !!content); 
     return s;
   },
-  serializeAttributes: function(node) {
-    var pairs = [], attributes = JsDomSerializer.attrs, attr, i;
+  serializeAttributes: function(node, outputNodeName) {
+    var pairs = [], attributes = this.attrs[outputNodeName] || this.attrs['*'], attr, i;
     for (i = 0; i < attributes.length; i +=1) {
       if (!this.isAllowed(node, attributes[i])) continue;
       attr = this.serializeAttribute(node, attributes[i]);
@@ -165,6 +168,10 @@ JsDomSerializer.prototype = {
       }
     }
     return true;
+  },
+  allowedAttrs: function(name, attrs) {
+    this.attrs[name] = attrs;
+    return this;
   },
   /**
    * Sets an element name translation, use an empty string as translation
