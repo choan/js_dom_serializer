@@ -28,18 +28,26 @@ You can disallow the serialization of any node through a filtering function. The
 
 ### Translation of node names
 
-Each instance of a serializer uses a `translations` dictionary to translate element names.
+Use the `translation` method to specify element translations.
 
     var serializer = new JsDomSerializer();
     // translate /b elements as /strong
-    serializer.translations.b = 'strong';
+    serializer.translation('b', 'strong');
     // do not output tags for /div elements
     // but process its content
-    serializer.translations.div = '';
+    serializer.translation('div', '');
+    // skip /iframe elements
+    serializer.translation('iframe', false);
 
 ### Exportable attributes
 
-Only attributes in the `JsDomSerializer.attrs` array are exported (this is due to a defect in Internet Explorer and its handling of `nodeElement.attributes` collections). Extend or modify as needed.
+Only attributes in white lists are serialized (this is due to a defect in Internet Explorer and its handling of `nodeElement.attributes` collections). Modify the default list (`JsDomSerializer.attrs['*']`) before instantiating the serializer.
+
+Configure exportable attributes by node name using the `allowedAttributes` method:
+
+    var serializer = new JsDomSerializer();
+    // serialize just the `href` attribute for /a elements 
+    serializer.allowedAttributes('a', ['href']);
 
 ## Dependencies
 
