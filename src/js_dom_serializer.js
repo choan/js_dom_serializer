@@ -65,6 +65,8 @@ JsDomSerializer.prototype = {
     //   return this.serializeAttribute(node, arguments[1]); // transmit the owner for IE
     case 3: // text
       return this.serializeText(node);
+    case 8: // comments
+      return this.serializeComment(node);
     case 9: // document
       return this.serializeDocument(node);
     case 10: // doctype
@@ -146,6 +148,10 @@ JsDomSerializer.prototype = {
   },
   serializeText: function(node) {
     return JsDomSerializer.escapeXml(node.nodeValue);
+  },
+  // comments are not serialized, extend if needed
+  serializeComment : function(node) {
+    return '';
   },
   /**
    * Runs the filter stack until any of the callbacks returns false
