@@ -28,6 +28,19 @@ JsDomSerializer.useEndTag = {
 };
 
 /**
+ * Exportable attrs
+ */  
+JsDomSerializer.attrs = [
+  'class',
+  'for',
+  'id',
+  'type',
+  'value',
+  'disabled',
+  'lang'
+];
+
+/**
  * Escapes XML special chars
  */ 
 JsDomSerializer.escapeXml = function(s, quotes) {
@@ -45,8 +58,9 @@ JsDomSerializer.prototype = {
     switch(node.nodeType) {
     case 1: // element
       return this.serializeElement(node);
-    case 2: // attribute
-      return this.serializeAttribute(node);
+    // attributes are not handled through serialize 
+    // case 2: // attribute
+    //   return this.serializeAttribute(node, arguments[1]); // transmit the owner for IE
     case 3: // text
       return this.serializeText(node);
     case 9: // document
@@ -54,14 +68,16 @@ JsDomSerializer.prototype = {
     case 10: // doctype
       return this.serializeDoctype(node);
     }
-    throw { name: 'NotImplementedError', message: 'Serialization of nodeType ' + node.nodeType + ' not implemented' };
+    if (JsDomSerializer.DEBUG) {
+      throw { name: 'NotImplementedError', message: 'Serialization of nodeType ' + node.nodeType + ' not implemented' };
+    }
     return '';
   },
   /**
    * Creates a start tag string
    */ 
   startTag : function(node) {
-    return '<' + node.tagName.toLowerCase() + this.serializeAttributes(node.attributes) + (this.isEmpty(node) ? JsDomSerializer.selfClosedEnd : '>');
+    return '<' + node.tagName.toLowerCase() + this.serializeAttributes(node) + (this.isEmpty(node) ? JsDomSerializer.selfClosedEnd : '>');
   },
   /**
    * Creates an end tag string
@@ -91,11 +107,11 @@ JsDomSerializer.prototype = {
   serializeElement: function(node) {
     return this.startTag(node) + this.content(node) + this.endTag(node);
   },
-  serializeAttributes: function(attributes) {
-    if (!attributes.length) return '';
-    var pairs = [], attr, i;
+  serializeAttributes: function(node) {
+    var pairs = [], attributes = JsDomSerializer.attrs, attr, i;
     for (i = 0; i < attributes.length; i +=1) {
-      attr = this.serialize(attributes[i]);
+      if (!this.isAllowed(node, attributes[i])) continue;
+      attr = this.serializeAttribute(node, attributes[i]);
       if (attr) pairs.push(attr);
     }
     return pairs.length ? ' ' + pairs.join(' ') : '';
@@ -104,19 +120,20 @@ JsDomSerializer.prototype = {
     // FIXME hardcoded "html" root element
     return '<!DOCTYPE html PUBLIC "' + doctype.publicId + '" "' + doctype.systemId + '">\n';
   },
-  serializeAttribute: function(attr) {
-    var name = JsDomSerializer.props[attr.nodeName] || attr.nodeName;
-    var element = attr.ownerElement;
+  serializeAttribute: function(node, name) {
+    var search = JsDomSerializer.props[name] || name;
     var value;
-    var special = /^(on.+|style|href|src|disabled)$/.test(attr.nodeName);
-    if (!special && (name in element)) {
-      value = element[name];
+    var special = /^(on.+|style|href|src)$/.test(name);
+    if (!special && (search in node)) {
+      value = node[search];
     }
     else {
-      value = element.getAttribute(name, 2);
+      value = node.getAttribute(name, 2);
     }
+    if (!value) return '';
+    if (value === true) value = name; // disabled et al.
     value = JsDomSerializer.escapeXml(value, true);
-    return attr.nodeName + '="' + value + '"';
+    return name + '="' + value + '"';
   },
   serializeText: function(node) {
     return JsDomSerializer.escapeXml(node.nodeValue);
@@ -124,9 +141,9 @@ JsDomSerializer.prototype = {
   /**
    * Runs the filter stack until any of the callbacks returns false
    */
-  isAllowed: function(node) {
+  isAllowed: function(node, name) { // name is passed for attributes
     for (var i = 0; i < this.filters.length; i += 1) {
-      if (this.filters[i](node) === false) {
+      if (this.filters[i](node, name) === false) {
         return false;
       }
     }

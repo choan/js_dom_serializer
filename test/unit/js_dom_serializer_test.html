@@ -38,6 +38,7 @@
 // <![CDATA[
 jShoulda
   .setContextAlias('module', '')
+  .setShouldAlias('should_not', 'should not')
   .unifyRunners();
 
 module({
@@ -67,11 +68,12 @@ module({
     setup: function() {
       this.el = document.createElement('div');
       this.el.setAttribute('id', 'dentro');
-      this.el.setAttribute('class', 'del area');
+      this.el.className = 'del area';
     }
     },
     should("serialize each of its attributes", function() {
-      this.assertEqual('<div id="dentro" class="del area"></div>', this.s.serialize(this.el), 'Should be equal');
+      this.assertMatch(/\sid="dentro"(\s|>)/, this.s.serialize(this.el));
+      // this.assertEqual('<div id="dentro" class="del area"></div>', this.s.serialize(this.el), 'Should be equal');
     })
   ),
   context("Elements with child nodes", {
@@ -84,16 +86,26 @@ module({
       this.assertEqual('<p>kun kun kun</p>', this.s.serialize(this.el));
     })
   ),
+  context("Input elements", {
+    setup: function() {
+      this.el = document.createElement('input');
+    }
+    },
+    should("export its default type, although when it has not been explicitly set", function() {
+      this.assertEqual('<input type="text" />', this.s.serialize(this.el));
+    })
+  ),
   context("A disabled element",
     should("serialize the disabled attribute with 'disabled' value", function() {
       var el = document.createElement('input');
       el.setAttribute('disabled', 'disabled');
-      this.assertEqual('<input disabled="disabled" />', this.s.serialize(el));
+      // el.disabled = true;
+      this.assertEqual('<input type="text" disabled="disabled" />', this.s.serialize(el));
     })
   ),
   context("An input element",
     should("serialize its current value", function() {
-      var el = document.getElementById('test-form').elements[0];
+      var el = document.getElementById('test-form').getElementsByTagName('input')[0];
       this.assertEqual('<input type="text" value="hey" />', this.s.serialize(el));
       el.value = "ho";
       this.assertEqual('<input type="text" value="ho" />', this.s.serialize(el));
@@ -105,8 +117,8 @@ module({
       this.el.style.float = 'left';
     }
     },
-    should("be serialized as strings", function() { // FAILS on firefox
-      this.assertEqual('<p style="float: left; " />', this.s.serialize(this.el), 'This is known to fail on Firefox, won\'t fix until decission is taken on the feature');
+    should_not("be serialized", function() { // FAILS on firefox
+      this.assertEqual('<p />', this.s.serialize(this.el), 'This is known to fail on Firefox, won\'t fix until decission is taken on the feature');
     })
   ),
   context("on* attributes", {
@@ -114,18 +126,50 @@ module({
       this.el = document.getElementById('test-onclick');
     }
     },
-    should("be serialized as strings", function() {
-      this.assertMatch(/onclick="alert\(\'hola\'\);"/, this.s.serialize(this.el));
+    should_not("be serialized", function() {
+      this.assertEqual('<a id="test-onclick">Hola</a>', this.s.serialize(this.el));
     })
   ),
   context("Quotes in attributes", {
     setup: function() {
       this.el = document.createElement('p');
-      this.el.setAttribute('class', 'oh "amable" vecino');
+      this.el.className = 'oh "amable" vecino';
     }
     },
     should("be escaped", function() {
       this.assertEqual('<p class="oh &quot;amable&quot; vecino" />', this.s.serialize(this.el));
+    })
+  ),
+  context("Forbidden elements", {
+    setup: function() {
+      this.el = document.createElement('p');
+      this.el.appendChild(document.createElement('a'));
+      this.el.appendChild(document.createElement('b'));
+      this.s.addFilter(function(node, attrName) {
+        if (!attrName && node.nodeType == 1) { // filter for nodes
+          if (node.nodeName.toLowerCase() == 'a') return false;
+        }
+      })
+    }
+    },
+    should_not("be serialized", function() {
+      this.assertEqual('<p><b /></p>', this.s.serialize(this.el));
+    })
+  ),
+  context("Forbidden attributes", {
+    setup: function() {
+      this.el = document.createElement('p');
+      this.el.className = 'smack',
+      this.el.id = 'down'
+      this.s.addFilter(function(node, attrName) {
+        if (attrName) {
+          if (attrName == 'class') return false;
+        }
+      });
+    }
+    },
+    should_not("be serialized", function() {
+      this.assertEqual('<p id="down" />', this.s.serialize(this.el));
     })
   )
 )();
